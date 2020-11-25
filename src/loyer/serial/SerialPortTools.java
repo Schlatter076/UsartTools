@@ -414,6 +414,48 @@ public class SerialPortTools {
     }
     return val;
   }
+  /**
+   * 获取CRC校验码
+   * @param buff
+   * @return
+   */
+  public static String getCrc(byte[] buff) {
+    int wCrc = 0xFFFF;
+    for (int i = 0; i < buff.length; i++) {
+      wCrc ^= (buff[i] & 0xFF); //保证buff[i]为无符号整数
+      for (int j = 0; j < 8; j++) {
+        if ((wCrc & 1) == 1) {
+          wCrc >>= 1;
+          wCrc ^= 0xA001;
+        } else
+          wCrc >>= 1;
+      }
+    }
+    return String.format("%02x", wCrc & 0xff) + " " + String.format("%02x", (wCrc >> 8) & 0xff);
+  }
+  /**
+   * 将源数组进行CRC校验后，把校验值添加到目标数组
+   * @param source 原数组
+   * @return 目标数组
+   */
+  public static byte[] addCrcCheck(byte[] source) {
+    byte[] dest = new byte[source.length + 2];
+    int wCrc = 0xFFFF;
+    for (int i = 0; i < source.length; i++) {
+      wCrc ^= (source[i] & 0xFF); //保证buff[i]为无符号整数
+      for (int j = 0; j < 8; j++) {
+        if ((wCrc & 1) == 1) {
+          wCrc >>= 1;
+          wCrc ^= 0xA001;
+        } else
+          wCrc >>= 1;
+      }
+      dest[i] = source[i]; //将原数据填充到目标数据
+    }
+    dest[dest.length - 2] = (byte) (wCrc & 0xff);
+    dest[dest.length - 1] = (byte) ((wCrc >> 8) & 0xff);
+    return dest;
+  }
 
   /**
    * 注册监听器
